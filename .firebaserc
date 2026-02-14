@@ -1,7 +1,5 @@
 {
   "projects": {
     "default": "nfp-dataload"
-  },
-  "targets": {},
-  "etags": {}
+  }
 }

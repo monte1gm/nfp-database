@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Login | IRS EIN Index</title>
-    <link rel="stylesheet" href="./css/styles.css" />
+    <link rel="stylesheet" href="/css/styles.css" />
   </head>
-  <body class="centered-page" data-page="login">
+  <body class="centered-page">
     <main class="card">
       <h1>IRS EIN Index</h1>
       <p class="muted">Sign in with Google to continue.</p>
@@ -14,6 +14,30 @@
       <p id="login-error" class="error" aria-live="polite"></p>
     </main>
 
-    <script type="module" src="./js/auth.js"></script>
+    <script type="module">
+      import { onAuth, signInWithGooglePopup } from '/js/firebase.init.js';
+      import { upsertUserProfile } from '/js/auth.js';
+
+      const signInButton = document.getElementById('google-sign-in');
+      const errorEl = document.getElementById('login-error');
+
+      onAuth((user) => {
+        if (user) {
+          window.location.replace('/app.html');
+        }
+      });
+
+      signInButton.addEventListener('click', async () => {
+        errorEl.textContent = '';
+
+        try {
+          const { user } = await signInWithGooglePopup();
+          await upsertUserProfile(user);
+          window.location.replace('/app.html');
+        } catch (error) {
+          errorEl.textContent = error?.message || 'Sign-in failed.';
+        }
+      });
+    </script>
   </body>
 </html>

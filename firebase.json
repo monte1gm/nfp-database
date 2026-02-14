@@ -1,4 +1,8 @@
 {
+  "firestore": {
+    "rules": "firebase/firestore.rules",
+    "indexes": "firebase/firestore.indexes.json"
+  },
   "hosting": {
     "public": "web/public",
     "ignore": [
@@ -6,9 +10,18 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "cleanUrls": true,
+    "trailingSlash": false,
     "rewrites": [
       {
-        "source": "**",
+        "source": "/api/**",
+        "run": {
+          "serviceId": "irs-ein-api",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/",
         "destination": "/index.html"
       }
     ]

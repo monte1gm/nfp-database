@@ -1,9 +1,4 @@
-import { auth, db, googleProvider } from './firebase.init.js';
-import {
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged
-} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+import { db, onAuth, signOutUser } from '/js/firebase.init.js';
 import {
   doc,
   getDoc,
@@ -12,7 +7,7 @@ import {
   serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
-async function ensureUserDocument(user) {
+export async function upsertUserProfile(user) {
   const userRef = doc(db, 'users', user.uid);
   const existing = await getDoc(userRef);
 
@@ -22,7 +17,7 @@ async function ensureUserDocument(user) {
       displayName: user.displayName || '',
       lastLoginAt: serverTimestamp()
     });
-    return;
+    return existing.data();
   }
 
   await setDoc(userRef, {
@@ -33,57 +28,43 @@ async function ensureUserDocument(user) {
     createdAt: serverTimestamp(),
     lastLoginAt: serverTimestamp()
   });
+
+  return {
+    email: user.email || '',
+    displayName: user.displayName || '',
+    role: 'user',
+    enabled: false
+  };
 }
 
-function setupLoginPage() {
-  const signInButton = document.getElementById('google-sign-in');
-  const errorEl = document.getElementById('login-error');
-
-  signInButton?.addEventListener('click', async () => {
-    errorEl.textContent = '';
-
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      await ensureUserDocument(result.user);
-      window.location.replace('./app.html');
-    } catch (error) {
-      errorEl.textContent = error?.message || 'Sign-in failed.';
-    }
-  });
-
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      window.location.replace('./app.html');
-    }
-  });
+export async function getUserProfile(uid) {
+  const snapshot = await getDoc(doc(db, 'users', uid));
+  if (!snapshot.exists()) {
+    return null;
+  }
+  return snapshot.data();
 }
 
-function setupAppPage() {
-  const signOutButton = document.getElementById('sign-out');
-
-  signOutButton?.addEventListener('click', async () => {
-    await signOut(auth);
-    window.location.replace('./login.html');
-  });
-
-  onAuthStateChanged(auth, async (user) => {
+export function requireAuth({
+  onAuthenticated,
+  onUnauthenticated = () => {
+    window.location.replace('/login.html');
+  }
+}) {
+  return onAuth(async (user) => {
     if (!user) {
-      window.location.replace('./login.html');
+      onUnauthenticated();
       return;
     }
 
-    try {
-      await ensureUserDocument(user);
-    } catch (_error) {
-      // Allow app bootstrap to continue; UI will surface authorization state.
-    }
+    await onAuthenticated(user);
   });
 }
 
-const page = document.body.dataset.page;
-if (page === 'login') {
-  setupLoginPage();
-}
-if (page === 'app') {
-  setupAppPage();
+export function wireSignOut(buttonId = 'sign-out') {
+  const signOutButton = document.getElementById(buttonId);
+  signOutButton?.addEventListener('click', async () => {
+    await signOutUser();
+    window.location.replace('/login.html');
+  });
 }

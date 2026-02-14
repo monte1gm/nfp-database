@@ -4,9 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>App | IRS EIN Index</title>
-    <link rel="stylesheet" href="./css/styles.css" />
+    <link rel="stylesheet" href="/css/styles.css" />
   </head>
-  <body data-page="app">
+  <body>
     <header class="topbar">
       <h1>IRS EIN Index</h1>
       <button id="sign-out" class="btn btn-secondary">Sign out</button>
@@ -33,7 +33,16 @@
       </section>
     </main>
 
-    <script type="module" src="./js/auth.js"></script>
-    <script type="module" src="./js/ui.js"></script>
+    <script type="module">
+      import { requireAuth, upsertUserProfile, wireSignOut } from '/js/auth.js';
+
+      wireSignOut('sign-out');
+      requireAuth({
+        onAuthenticated: async (user) => {
+          await upsertUserProfile(user);
+        }
+      });
+    </script>
+    <script type="module" src="/js/ui.js"></script>
   </body>
 </html>

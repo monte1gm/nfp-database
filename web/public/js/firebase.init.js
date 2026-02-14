@@ -1,5 +1,11 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -16,3 +22,22 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+
+export async function signInWithGooglePopup() {
+  return signInWithPopup(auth, googleProvider);
+}
+
+export async function signOutUser() {
+  return signOut(auth);
+}
+
+export function onAuth(cb) {
+  return onAuthStateChanged(auth, cb);
+}
+
+export async function getIdToken(user) {
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+  return user.getIdToken();
+}

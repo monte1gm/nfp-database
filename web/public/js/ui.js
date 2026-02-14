@@ -1,10 +1,9 @@
-import { auth, db } from './firebase.init.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-import { fetchOrgByEin } from './api.js';
+import { fetchOrgByEin } from '/js/api.js';
+import { getUserProfile, requireAuth } from '/js/auth.js';
 
 const form = document.getElementById('ein-form');
 const einInput = document.getElementById('ein-input');
+const submitButton = form?.querySelector('button[type="submit"]');
 const resultsEl = document.getElementById('results');
 const authWarningEl = document.getElementById('auth-warning');
 
@@ -32,47 +31,38 @@ function renderMessage(message, isError = false) {
   resultsEl.textContent = message;
 }
 
-async function evaluateAuthorization(user) {
-  const userRef = doc(db, 'users', user.uid);
-  const snapshot = await getDoc(userRef);
+function setSearchEnabled(enabled) {
+  canSearch = enabled;
+  if (submitButton) {
+    submitButton.disabled = !enabled;
+  }
+  if (einInput) {
+    einInput.disabled = !enabled;
+  }
+}
 
-  const enabled = snapshot.exists() && snapshot.data().enabled === true;
+async function checkAuthorization(user) {
+  const profile = await getUserProfile(user.uid);
+  const enabled = Boolean(profile && profile.enabled === true);
 
   if (!enabled) {
-    canSearch = false;
-    form.querySelector('button[type="submit"]').disabled = true;
-    einInput.disabled = true;
     authWarningEl.classList.remove('hidden');
+    setSearchEnabled(false);
     renderMessage('Not authorized. Search is disabled.');
     return;
   }
 
-  canSearch = true;
-  form.querySelector('button[type="submit"]').disabled = false;
-  einInput.disabled = false;
   authWarningEl.classList.add('hidden');
+  setSearchEnabled(true);
   renderMessage('Ready. Enter an EIN and click Search.');
 }
 
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    return;
-  }
-
-  try {
-    await evaluateAuthorization(user);
-  } catch (_error) {
-    canSearch = false;
-    form.querySelector('button[type="submit"]').disabled = true;
-    einInput.disabled = true;
-    authWarningEl.classList.remove('hidden');
-    renderMessage('Unable to verify authorization state.');
-  }
+requireAuth({
+  onAuthenticated: checkAuthorization
 });
 
 einInput?.addEventListener('input', (event) => {
-  const formatted = formatEin(event.target.value);
-  event.target.value = formatted;
+  event.target.value = formatEin(event.target.value);
 });
 
 form?.addEventListener('submit', async (event) => {
@@ -91,10 +81,12 @@ form?.addEventListener('submit', async (event) => {
 
   renderMessage('Searching...');
 
-  try {
-    const payload = await fetchOrgByEin(ein);
-    renderJson(payload);
-  } catch (error) {
-    renderMessage(error?.message || 'Lookup failed.', true);
+  const result = await fetchOrgByEin(ein);
+
+  if (!result.ok) {
+    renderMessage(result.message || 'Lookup failed.', true);
+    return;
   }
+
+  renderJson(result.data);
 });
