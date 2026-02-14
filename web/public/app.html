@@ -33,16 +33,6 @@
       </section>
     </main>
 
-    <script type="module">
-      import { requireAuth, upsertUserProfile, wireSignOut } from '/js/auth.js';
-
-      wireSignOut('sign-out');
-      requireAuth({
-        onAuthenticated: async (user) => {
-          await upsertUserProfile(user);
-        }
-      });
-    </script>
     <script type="module" src="/js/ui.js"></script>
   </body>
 </html>

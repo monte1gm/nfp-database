@@ -1,4 +1,4 @@
-import { pool } from './pg.js';
+import { pool } from './pool.js';
 
 export function normalizeEin(input) {
   return String(input || '').replace(/\D/g, '').slice(0, 9);
@@ -10,11 +10,9 @@ export async function getOrgByEin(einInput) {
     return null;
   }
 
-  const query = {
-    text: 'SELECT * FROM org_master WHERE ein = $1 LIMIT 1',
-    values: [ein]
-  };
-
-  const result = await pool.query(query);
-  return result.rows[0] || null;
+  const [rows] = await pool.query(
+    'SELECT * FROM orgs WHERE ein = ? LIMIT 1',
+    [ein]
+  );
+  return rows[0] ?? null;
 }

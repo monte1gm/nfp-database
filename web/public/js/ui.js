@@ -1,5 +1,5 @@
 import { fetchOrgByEin } from '/js/api.js';
-import { getUserProfile, requireAuth } from '/js/auth.js';
+import { startAuthBootstrap, wireSignOut } from '/js/auth.js';
 
 const form = document.getElementById('ein-form');
 const einInput = document.getElementById('ein-input');
@@ -41,25 +41,39 @@ function setSearchEnabled(enabled) {
   }
 }
 
-async function checkAuthorization(user) {
-  const profile = await getUserProfile(user.uid);
-  const enabled = Boolean(profile && profile.enabled === true);
+async function initializeAuthorization() {
+  setSearchEnabled(false);
+  wireSignOut('sign-out');
 
-  if (!enabled) {
-    authWarningEl.classList.remove('hidden');
-    setSearchEnabled(false);
-    renderMessage('Not authorized. Search is disabled.');
-    return;
-  }
-
-  authWarningEl.classList.add('hidden');
-  setSearchEnabled(true);
-  renderMessage('Ready. Enter an EIN and click Search.');
+  startAuthBootstrap({
+    page: 'app',
+    showLoading: () => {
+      authWarningEl.classList.add('hidden');
+      renderMessage('Checking session...');
+    },
+    showNotAuthorized: () => {
+      authWarningEl.classList.remove('hidden');
+      setSearchEnabled(false);
+      renderMessage('Not authorized. Search is disabled.');
+    },
+    loadApp: () => {
+      authWarningEl.classList.add('hidden');
+      setSearchEnabled(true);
+      renderMessage('Ready. Enter an EIN and click Search.');
+    },
+    onError: (error) => {
+      console.error('Authorization bootstrap failed:', error);
+      authWarningEl.classList.remove('hidden');
+      setSearchEnabled(false);
+      const message = error?.message || '';
+      if (message.includes('Missing or insufficient permissions')) {
+        renderMessage('Authorization check failed: Firestore permission denied.', true);
+        return;
+      }
+      renderMessage('Unable to verify authorization state.', true);
+    }
+  });
 }
-
-requireAuth({
-  onAuthenticated: checkAuthorization
-});
 
 einInput?.addEventListener('input', (event) => {
   event.target.value = formatEin(event.target.value);
@@ -82,7 +96,6 @@ form?.addEventListener('submit', async (event) => {
   renderMessage('Searching...');
 
   const result = await fetchOrgByEin(ein);
-
   if (!result.ok) {
     renderMessage(result.message || 'Lookup failed.', true);
     return;
@@ -90,3 +103,5 @@ form?.addEventListener('submit', async (event) => {
 
   renderJson(result.data);
 });
+
+initializeAuthorization();

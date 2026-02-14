@@ -10,31 +10,32 @@
     <main class="card">
       <h1>IRS EIN Index</h1>
       <p class="muted">Sign in with Google to continue.</p>
+      <p id="login-reason" class="muted" aria-live="polite"></p>
       <button id="google-sign-in" class="btn">Continue with Google</button>
       <p id="login-error" class="error" aria-live="polite"></p>
     </main>
 
     <script type="module">
-      import { onAuth, signInWithGooglePopup } from '/js/firebase.init.js';
-      import { upsertUserProfile } from '/js/auth.js';
+      import { startAuthBootstrap, wireGoogleSignIn } from '/js/auth.js';
 
-      const signInButton = document.getElementById('google-sign-in');
       const errorEl = document.getElementById('login-error');
+      const reasonEl = document.getElementById('login-reason');
 
-      onAuth((user) => {
-        if (user) {
-          window.location.replace('/app.html');
-        }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('reason') === 'session_expired') {
+        reasonEl.textContent = 'Your session expired - please sign in again.';
+      }
+
+      wireGoogleSignIn({
+        buttonId: 'google-sign-in',
+        errorId: 'login-error'
       });
 
-      signInButton.addEventListener('click', async () => {
-        errorEl.textContent = '';
-
-        try {
-          const { user } = await signInWithGooglePopup();
-          await upsertUserProfile(user);
-          window.location.replace('/app.html');
-        } catch (error) {
+      startAuthBootstrap({
+        page: 'login',
+        showLoading: () => {},
+        showLogin: () => {},
+        onError: (error) => {
           errorEl.textContent = error?.message || 'Sign-in failed.';
         }
       });
