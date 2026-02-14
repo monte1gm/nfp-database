@@ -1,6 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Auth helpers
     function isSignedIn() {
       return request.auth != null;
     }
@@ -27,19 +28,26 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
+      // A signed-in user can only read their own profile document.
       allow get: if isOwner(uid);
       allow list: if false;
 
+      // User may create their own profile once after sign-in.
       allow create: if isOwner(uid)
         && hasValidUserShape(request.resource.data);
 
+      // User may refresh profile identity + lastLoginAt, but cannot self-elevate.
       allow update: if isOwner(uid)
         && hasValidUserShape(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.role == resource.data.role
         && request.resource.data.enabled == resource.data.enabled;
+
+      // Prevent client-side document deletion.
+      allow delete: if false;
     }
 
+    // Default-deny for every other collection/document.
     match /{document=**} {
       allow read, write: if false;
     }
