@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App | IRS EIN Index</title>
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body data-page="app">
+    <header class="topbar">
+      <h1>IRS EIN Index</h1>
+      <button id="sign-out" class="btn btn-secondary">Sign out</button>
+    </header>
+
+    <main class="container">
+      <section id="auth-warning" class="warning hidden" aria-live="polite">
+        Not authorized. Your account exists but access is disabled. Contact an administrator.
+      </section>
+
+      <section class="card">
+        <h2>Lookup EIN</h2>
+        <form id="ein-form" class="form-row">
+          <label for="ein-input" class="sr-only">EIN</label>
+          <input id="ein-input" name="ein" type="text" inputmode="numeric" autocomplete="off" placeholder="XX-XXXXXXX" maxlength="10" required />
+          <button type="submit" class="btn">Search</button>
+        </form>
+        <p class="muted">Enter 9 digits. Dashes are optional.</p>
+      </section>
+
+      <section class="card">
+        <h2>Results</h2>
+        <div id="results" class="results muted">No results yet.</div>
+      </section>
+    </main>
+
+    <script type="module" src="./js/auth.js"></script>
+    <script type="module" src="./js/ui.js"></script>
+  </body>
+</html>

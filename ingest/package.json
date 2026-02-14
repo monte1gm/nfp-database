@@ -1,0 +1,17 @@
+{
+  "name": "irs-ein-index-ingest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/pipeline.js",
+  "scripts": {
+    "start": "node src/pipeline.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "unzipper": "^0.12.3"
+  }
+}
