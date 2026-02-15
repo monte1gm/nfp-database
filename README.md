@@ -1,5 +1,58 @@
 # irs-ein-index
 
+## Web Firebase setup (`web/public/js/firebase.init.js`)
+
+Create `web/public/js/firebase.init.js` locally (this file is gitignored) with your Firebase web app config:
+
+```js
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_AUTH_DOMAIN',
+  projectId: 'YOUR_PROJECT_ID',
+  storageBucket: 'YOUR_STORAGE_BUCKET',
+  messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
+  appId: 'YOUR_APP_ID',
+  measurementId: 'YOUR_MEASUREMENT_ID'
+};
+
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const googleProvider = new GoogleAuthProvider();
+
+export async function signInWithGooglePopup() {
+  return signInWithPopup(auth, googleProvider);
+}
+
+export async function signOutUser() {
+  return signOut(auth);
+}
+
+export function onAuth(cb) {
+  return onAuthStateChanged(auth, cb);
+}
+
+export async function getIdToken(user) {
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+  return user.getIdToken();
+}
+```
+
+Get these values from Firebase Console:
+- Project settings -> General -> Your apps -> Firebase SDK snippet -> Config.
+
 ## Ingestion Job (`ingest/`)
 
 Monthly ingestion loads IRS bulk datasets into Cloud SQL Postgres using idempotent upserts (`INSERT ... ON CONFLICT (ein) DO UPDATE`).

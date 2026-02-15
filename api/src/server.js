@@ -3,6 +3,7 @@ import { env } from './config/env.js';
 import orgRouter from './routes/org.js';
 import { verifyFirebaseAuth } from './middleware/verifyFirebaseAuth.js';
 import { requireAllowedUser } from './middleware/requireAllowedUser.js';
+import { pool } from './db/pool.js';
 
 const app = express();
 
@@ -11,6 +12,15 @@ app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get('/api/db-health', async (_req, res, next) => {
+  try {
+    const [rows] = await pool.query('SELECT 1 AS ok');
+    return res.json({ ok: true, db: rows[0] });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 app.use('/api/org', verifyFirebaseAuth, requireAllowedUser, orgRouter);
